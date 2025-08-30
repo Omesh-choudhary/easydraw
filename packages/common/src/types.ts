@@ -2,15 +2,14 @@ import z from "zod"
 
 
 export const createUserScehma = z.object({
-    username:z.string().min(3).max(20),
+    name:z.string(),
+    email:z.email().min(3),
     password:z.string(),
-    name:z.string()
 })
 
 export const signinUserScehma = z.object({
-    username:z.string().min(3).max(20),
+    email:z.email().min(3),
     password:z.string(),
-    name:z.string()
 })
 
 export const createRoomScehma = z.object({

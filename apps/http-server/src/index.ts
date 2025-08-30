@@ -1,45 +1,135 @@
 import express from "express"
 import jwt from "jsonwebtoken"
 import { middleware } from "./middleware"
-import {createUserScehma} from "@repo/common/types"
+import {createRoomScehma, createUserScehma, signinUserScehma} from "@repo/common/types"
+import prisma from "@repo/db/client"
+import bcrypt from "bcryptjs"
+import {JWT_SECRET} from "@repo/backend-common/config"
 const app = express()
+app.use(express.json())
 
-
-app.post("/signup",(req,res)=>{
+app.post("/signup",async(req,res)=>{
     // db call
    const result = createUserScehma.safeParse(req.body)
-
    if (!result.success) {
-    
-    res.json({
-        error:"Invalid credentials"
+  
+    res.status(411).json({
+        error:"Invalid credentials",
     })
     return ;
    }
-    res.json({
-        "user":"1"
+
+   try {
+
+    const hashedPassword = bcrypt.hashSync(result.data.password,10)
+
+    const user = await prisma.user.create({
+        data:{
+           name:result.data.name,
+           email:result.data.email,
+           password:hashedPassword
+        }
     })
+
+    res.json({
+        userId:user.id
+    })
+    
+   } catch (error) {
+    res.status(411).json({
+        messagge:"User already registered with this email",
+    })
+   }
+    
 })
 
-app.post("/signin",(req,res)=>{
+app.post("/signin",async(req,res)=>{
     // db call
-     const userId = 1 ;
-     const token = jwt.sign({
-        userId
-     },"jwt-secret",{expiresIn:"24h"})
 
-    res.json({
-        token
-    })
+    const result = signinUserScehma.safeParse(req.body)
+
+    if (!result.success) {
+        res.status(411).json({
+            message:"Invalid credentials"
+        })
+        return ;
+    }
+
+    try {
+
+        const existUser = await prisma.user.findFirst({
+            where:{
+                email:result.data.email
+            }
+        })
+
+        if (!existUser) {
+            res.status(411).json({
+                message:"Invalid email or password"
+            })
+            return ;
+        }
+
+        const isPasswordCorrect = bcrypt.compare(result.data.password,existUser?.password || "")
+
+        if (!isPasswordCorrect) {
+            res.status(411).json({
+                message:"Invalid email or password"
+            })
+
+            return ;
+        }
+
+        const token = jwt.sign({
+                     id:existUser.id
+            },JWT_SECRET,{expiresIn:"24h"})
+
+         res.json({
+                   token
+                 })
+
+        
+    } catch (error) {
+        res.status(411).json({
+            message:"something went wrong"
+        })
+    }
+     
 })
 
-app.post("/room",middleware,(req,res)=>{
+app.post("/room",middleware,async(req,res)=>{
+       const result = createRoomScehma.safeParse(req.body)
 
-    res.json({
-        "roomid":"24noer34"
-    })
+    if (!result.success) {
+        res.status(411).json({
+            message:"Invalid credentials"
+        })
+        return ;
+    }
+    try {
+        // @ts-ignore
+        const userId = req.userId
+
+
+        const room = await prisma.room.create({
+            data:{
+               slug: result.data.name,
+               adminId:userId
+            }
+        })
+
+        res.json({
+            roomId:room.id
+        })
+    } catch (error) {
+
+        res.status(401).json({
+            message:"room already exists with this name"
+        })
+    }
+
 
 })
 
 
-app.listen(3000)
+app.listen(3001)
