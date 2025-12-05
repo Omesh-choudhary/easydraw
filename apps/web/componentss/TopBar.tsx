@@ -12,7 +12,10 @@ import { TfiLayoutLineSolid } from 'react-icons/tfi'
 export interface easyDrawState {
     activeTool: string,
     strokeColour: string,
-    bgColour:string
+    bgColour:string,
+    strokeWidth:number,
+    strokeStyle:string,
+    opacity:number
 }
  const TopBar = () => {
 const [state, setstate] = useState<easyDrawState>()

@@ -14,7 +14,10 @@ import { easyDrawState } from './TopBar'
 const SideBar = () => {
     const [state, setstate] = useState<easyDrawState>()
     const [stroke, setstroke] = useState<string>("")
+    const [strokeWidth, setstrokeWidth] = useState<number>(1)
+    const [strokeStyle, setstrokeStyle] = useState<string>("solid")
     const [bgColour, setbgColour] = useState<string >("")
+    const [opacity, setopacity] = useState<number | string>(100)
 
     useEffect(()=>{
         let easyDrawState = JSON.parse(localStorage.getItem("easyDrawState") || "{}")
@@ -22,6 +25,9 @@ const SideBar = () => {
          setstate(easyDrawState)
         easyDrawState.bgColour?setbgColour(easyDrawState.bgColour):null
         easyDrawState.strokeColour?setstroke(easyDrawState.strokeColour):null
+        easyDrawState.strokeWidth?setstrokeWidth(easyDrawState.strokeWidth):null
+        easyDrawState.strokeStyle?setstrokeStyle(easyDrawState.strokeStyle):null
+        easyDrawState.opacity?setopacity(easyDrawState.opacity*100):null
        }
     },[])
 
@@ -49,37 +55,61 @@ const SideBar = () => {
 
     }
 
-    const StrokeHandler =()=>{
+    const StrokeHandler =(stroke:number | string)=>{
+           let easyDrawState = JSON.parse(localStorage.getItem("easyDrawState") || "{}")
+        if (easyDrawState) {
+            setstate(easyDrawState)
+        }
+         let obj
+        if (typeof stroke === 'number') {
+            setstrokeWidth(stroke)
+            obj = {...easyDrawState, strokeWidth:stroke }  
+            setstate(obj)
+        } 
+        if (typeof stroke === 'string') {
+            setstrokeStyle(stroke)
+            obj = {...easyDrawState, strokeStyle:stroke }  
+            setstate(obj)
+        }
 
+        localStorage.setItem("easyDrawState", JSON.stringify(obj))
     }
+
+    const OpacityHandler =(value:string | number)=>{
+       setopacity(value)
+       let easyDrawState = JSON.parse(localStorage.getItem("easyDrawState") || "{}")
+       let obj = {...easyDrawState, opacity:Number(value)/100}
+       localStorage.setItem("easyDrawState", JSON.stringify(obj))
+    }
+
   return (
     <div className='w-52  bg-[#222222] h-[72vh] absolute left-5 top-20 rounded-md p-2'>
 
         <div className="stroke-box ">
             <h3 className='text-xs font-semibold text-gray-300 '>Stroke</h3>
             <div className="storke-colours flex justify-start items-center py-2 gap-1.5">
-                <ColourBox active={stroke === "#fff"}    setColour={(colour)=>ColourHandler(colour,"stroke")}   colour='#fff' padding='p-3'/>
-                <ColourBox active={stroke === "#dc1d73"} setColour={(colour)=>ColourHandler(colour,"stroke")} colour='#dc1d73' padding='p-3'/>
-                <ColourBox active={stroke === "#27dc1d"} setColour={(colour)=>ColourHandler(colour,"stroke")} colour='#27dc1d' padding='p-3'/>
-                <ColourBox active={stroke === "#1da9dc"} setColour={(colour)=>ColourHandler(colour,"stroke")} colour='#1da9dc' padding='p-3'/>
-                <ColourBox active={stroke === "#e68d2d"} setColour={(colour)=>ColourHandler(colour,"stroke")} colour='#e68d2d' padding='p-3'/>
+                <ColourBox active={stroke === "rgba(255, 255, 255, 1)"}    setColour={(colour)=>ColourHandler(colour,"stroke")}   colour='rgba(255, 255, 255, 1)' padding='p-3'/>
+                <ColourBox active={stroke === "rgba(220, 29, 115, 1)"} setColour={(colour)=>ColourHandler(colour,"stroke")} colour='rgba(220, 29, 115, 1)' padding='p-3'/>
+                <ColourBox active={stroke === "rgba(39, 220, 29, 1)"} setColour={(colour)=>ColourHandler(colour,"stroke")} colour='rgba(39, 220, 29, 1)' padding='p-3'/>
+                <ColourBox active={stroke === "rgba(29, 169, 220, 1)"} setColour={(colour)=>ColourHandler(colour,"stroke")} colour='rgba(29, 169, 220, 1)' padding='p-3'/>
+                <ColourBox active={stroke === "rgba(230, 141, 45, 1)"} setColour={(colour)=>ColourHandler(colour,"stroke")} colour='rgba(230, 141, 45, 1)' padding='p-3'/>
                 <h1 className='text-gray-600'>|</h1>
-                <div style={{backgroundColor:`${stroke || "#fff"}`}} className={`colour-box p-4 rounded-md`}></div>
+                <div style={{backgroundColor:`${stroke || "rgba(255, 255, 255, 1)"}`}} className={`colour-box p-4 rounded-md`}></div>
                 {/* <ColourBox colour={stroke || "#fff"} padding='p-4'/> */}
 
             </div>
 
-            
+            <div className='bg-[#784003]'></div>
         </div>
 
         <div className="bg-box my-4 ">
             <h3 className='text-xs font-semibold text-gray-300 '>Background</h3>
            <div className="bg-colours flex justify-start items-center py-2 gap-1.5 ">
-                <ColourBox active={bgColour === "#403f3e"}   setColour={(colour)=>ColourHandler(colour,"bgColour")}  colour='#403f3e' padding='p-3'/>
-                <ColourBox active={bgColour === "#dc1d73ab"} setColour={(colour)=>ColourHandler(colour,"bgColour")} colour='#dc1d73ab' padding='p-3'/>
-                <ColourBox active={bgColour === "#27dc1d9d"} setColour={(colour)=>ColourHandler(colour,"bgColour")} colour='#27dc1d9d' padding='p-3'/>
-                <ColourBox active={bgColour === "#1da9dc9d"} setColour={(colour)=>ColourHandler(colour,"bgColour")} colour='#1da9dc9d' padding='p-3'/>
-                <ColourBox active={bgColour === "#c06c12b0"} setColour={(colour)=>ColourHandler(colour,"bgColour")} colour='#c06c12b0' padding='p-3'/>
+                <ColourBox active={bgColour === "transparent"}   setColour={()=>ColourHandler("transparent","bgColour")}  colour='#403f3e' padding='p-3'/>
+                <ColourBox active={bgColour === "rgba(143, 6, 68, 1)"} setColour={(colour)=>ColourHandler(colour,"bgColour")} colour='rgba(143, 6, 68, 1)' padding='p-3'/>
+                <ColourBox active={bgColour === "rgba(8, 116, 3, 1)"} setColour={(colour)=>ColourHandler(colour,"bgColour")} colour='rgba(8, 116, 3, 1)' padding='p-3'/>
+                <ColourBox active={bgColour === "rgba(4, 103, 139, 1)"} setColour={(colour)=>ColourHandler(colour,"bgColour")} colour='rgba(4, 103, 139, 1)' padding='p-3'/>
+                <ColourBox active={bgColour === "rgba(120, 64, 3, 1)"} setColour={(colour)=>ColourHandler(colour,"bgColour")} colour='rgba(120, 64, 3, 1)' padding='p-3'/>
                 <h1 className='text-gray-600'>|</h1>
                 <div style={{backgroundColor:`${bgColour || "#403f3e"}`}} className={`colour-box p-4 rounded-md`}></div>
 
@@ -90,9 +120,9 @@ const SideBar = () => {
         <div className="stroke-width-box my-4">
             <h3 className='text-xs font-semibold text-gray-300 '>Stroke width</h3>
             <div className="storke-colours flex justify-start items-center py-2 gap-1.5">
-                <Icon   icon={TfiLayoutLineSolid} bgColour='bg-[#333232]' />
-                <Icon icon={TfiLayoutLineSolid} bgColour='bg-[#333232]'  />
-                <Icon icon={TfiLayoutLineSolid}  bgColour='bg-[#333232]'  />
+                <Icon bold={1} active={strokeWidth === 1} fn={()=>StrokeHandler(1)} icon={TfiLayoutLineSolid} bgColour='bg-[#333232]' />
+                <Icon bold={2} active={strokeWidth === 2} fn={()=>StrokeHandler(2)} icon={TfiLayoutLineSolid} bgColour='bg-[#333232]'  />
+                <Icon bold={3} active={strokeWidth === 3} fn={()=>StrokeHandler(3)} icon={TfiLayoutLineSolid} bgColour='bg-[#333232]'  />
 
             </div>
 
@@ -104,9 +134,9 @@ const SideBar = () => {
         <div className="stroke-style-box my-4 ">
             <h3 className='text-xs font-semibold text-gray-300 '>Stroke style</h3>
             <div className="storke-colours flex justify-start items-center py-2 gap-1.5">
-                <Icon icon={TfiLayoutLineSolid} bgColour='bg-[#333232]' />
-                <Icon icon={TfiLineDashed} bgColour='bg-[#333232]' />
-                <Icon icon={TbLineDotted} bgColour='bg-[#333232]' />
+                <Icon active={strokeStyle === "solid"} fn={()=>StrokeHandler("solid")} icon={TfiLayoutLineSolid} bgColour='bg-[#333232]' />
+                <Icon active={strokeStyle === "dashed"} fn={()=>StrokeHandler("dashed")} icon={TfiLineDashed} bgColour='bg-[#333232]' />
+                <Icon active={strokeStyle === "dotted"} fn={()=>StrokeHandler("dotted")} icon={TbLineDotted} bgColour='bg-[#333232]' />
 
             </div>  
         </div>
@@ -122,7 +152,7 @@ const SideBar = () => {
         <div className="Opacity-box my-4 ">
             <h3 className='text-xs font-semibold text-gray-300 '>Opacity</h3>
             <div className="Opacity  py-2 gap-1.5">
-               <input className='w-full accent-[#413f85] bg-gray-500 border-none outline-none h-1' type="range" min={0} max={100} defaultValue={100} name="opacity" id="" />
+               <input value={opacity} onChange={(e)=>OpacityHandler(e.target.value)} className='w-full accent-[#413f85] bg-gray-500 border-none outline-none h-1' type="range" min={0} max={100} name="opacity" id="" />
                <div className="range text-white text-xs w-full flex justify-between items-center">
                 <h4>0</h4>
                 <h4>100</h4>

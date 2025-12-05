@@ -10,7 +10,10 @@ export type Shape = {
     height?:number
     width?:number
     radius?:number
+    opacity:number
     strokeColour?:string | null
+    strokeWidth?:number | null
+    strokeStyle?:string | null
     bgColour?:string | null
 } 
 
@@ -21,6 +24,9 @@ export const initDraw =(canvas:HTMLCanvasElement)=>{
   let shape:easyDrawState["activeTool"] | null ;
   let strokeColour:easyDrawState["strokeColour"] | null ;
   let bgColour:easyDrawState["bgColour"] | null ;
+  let strokeStyle:easyDrawState["strokeStyle"] | null ;
+  let strokeWidth:easyDrawState["strokeWidth"] | null ;
+  let opacity:easyDrawState["opacity"] | 1 ;
 
       const ctx = canvas.getContext("2d")
 
@@ -41,13 +47,32 @@ export const initDraw =(canvas:HTMLCanvasElement)=>{
                 shape = state.activeTool; 
                 strokeColour = state.strokeColour;
                 bgColour = state.bgColour
-                 if (strokeColour) {
-                  ctx.strokeStyle = strokeColour  
+                strokeStyle = state.strokeStyle
+                strokeWidth = state.strokeWidth
+                opacity = state.opacity
+
+                strokeWidth?ctx.lineWidth=strokeWidth:null
+                strokeColour?ctx.strokeStyle=strokeColour:null
+
+
+                ctx.globalAlpha = opacity != null ? opacity : 1
+                if (state.bgColour && state.bgColour !=="transparent") {   
+                  ctx.fillStyle=bgColour
+                }else{
+                  ctx.fillStyle = "rgba(0, 0, 0, 0)"
                 }
 
-                if (bgColour) {
-                  ctx.fillStyle = bgColour
+                if (strokeStyle === "dashed") {
+                  ctx.setLineDash([10,5])
                 }
+                if (strokeStyle === "dotted") {
+                  ctx.setLineDash([2,3])
+                }
+                if(strokeStyle === "solid"){
+                  ctx.setLineDash([0,0])
+                }
+
+                
               } catch (err) {
                 console.error("Invalid easyDrawState in localStorage:", err);
                 shape = null;
@@ -67,25 +92,25 @@ export const initDraw =(canvas:HTMLCanvasElement)=>{
             
             let dimensions:Shape
             if (shape==="rectangle") {
-                dimensions ={type:"rectangle",x:startX, y:startY, height, width, strokeColour, bgColour}
+                dimensions ={type:"rectangle",x:startX, y:startY, height, width, strokeColour, bgColour, strokeStyle, strokeWidth, opacity }
             }
             else if (shape==="circle"){
             const centerX = startX + width/2
             const centerY = startY + height/2
             const radius = Math.max(height, width)/2
-                 dimensions ={type:"circle",x:centerX, y:centerY, radius, strokeColour, bgColour}
+                 dimensions ={type:"circle",x:centerX, y:centerY, radius, strokeColour, bgColour,strokeStyle, strokeWidth, opacity}
             }
            else if (shape==="diamond") {
             const centerX = startX + width/2
             const centerY = startY + height/2
-            dimensions ={type:"diamond",x:centerX, y:centerY, height, width, strokeColour, bgColour}
+            dimensions ={type:"diamond",x:centerX, y:centerY, height, width, strokeColour, bgColour, strokeStyle, strokeWidth, opacity}
             }
            else if (shape==="arrow") {
                  const angle = Math.atan2(e.clientY - startY, e.clientX - startX);
-                dimensions ={type:"arrow",x:startX, y:startY, toX:e.clientX, toY:e.clientY, angle, strokeColour}
+                dimensions ={type:"arrow",x:startX, y:startY, toX:e.clientX, toY:e.clientY, angle, strokeColour, strokeWidth, strokeStyle, opacity}
             }
             else if (shape==="line") {
-                dimensions ={type:"line",x:startX, y:startY, toX:e.clientX, toY:e.clientY, angle:0, strokeColour}
+                dimensions ={type:"line",x:startX, y:startY, toX:e.clientX, toY:e.clientY, angle:0, strokeColour, strokeWidth, strokeStyle, opacity}
             }
             else {
             throw new Error("Unknown shape type: " + shape);
@@ -102,7 +127,6 @@ export const initDraw =(canvas:HTMLCanvasElement)=>{
                 let width = e.clientX-startX
                 const centerX = startX + width/2
                 const centerY = startY + height/2
-                ctx.strokeStyle = "rgba(255, 255, 255)"
                
                 
                 if (shape !== "pencil") {
@@ -111,6 +135,7 @@ export const initDraw =(canvas:HTMLCanvasElement)=>{
 
                 if (shape==="rectangle") {
                     
+                    ctx.strokeRect(startX, startY, width, height)
                     ctx.fillRect(startX, startY, width, height)
                 }
 
@@ -143,7 +168,7 @@ export const initDraw =(canvas:HTMLCanvasElement)=>{
                 }
 
                 if (shape === "arrow") {
-
+                     console.log(ctx.strokeStyle)
                   const angle = Math.atan2(e.clientY - startY, e.clientX - startX);
                   
                   ctx.save(); // Save the current canvas state
@@ -173,10 +198,8 @@ export const initDraw =(canvas:HTMLCanvasElement)=>{
                 }
 
                  if (shape === "pencil") {  
-                     console.log("pencil")
-                     console.log(startX, startY)
-                  ctx.lineWidth = 1; // Line thickness
-                  ctx.lineJoin = 'round'; // Rounded corners for lines
+
+                  ctx.lineJoin = 'round'; 
                   ctx.lineCap = 'round';
 
                   ctx.beginPath();
@@ -214,9 +237,23 @@ export const drawContent = (
 
   for (const shape of existingShapes) {
 
-    if (shape.bgColour) {
+    shape.strokeWidth?ctx.lineWidth=shape.strokeWidth:null
+    ctx.globalAlpha =shape.opacity
+     if (shape.strokeStyle === "dashed") {
+                  ctx.setLineDash([10,5])
+                }
+                if (shape.strokeStyle === "dotted") {
+                  ctx.setLineDash([2,3])
+                }
+                if(shape.strokeStyle === "solid"){
+                  ctx.setLineDash([0,0])
+                }
+    if (shape.bgColour && shape.bgColour !== "transparent") {
       ctx.fillStyle = shape.bgColour
+    }else{
+      ctx.fillStyle = "rgba(0, 0, 0, 0)"
     }
+
     if (shape.type === "rectangle") {
       ctx.strokeStyle = shape.strokeColour || "white"
       ctx.fillRect(shape.x, shape.y, shape.width!, shape.height!);
