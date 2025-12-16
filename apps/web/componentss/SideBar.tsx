@@ -8,78 +8,44 @@ import { GiSquare } from 'react-icons/gi'
 import { RiDownloadLine, RiUploadLine } from 'react-icons/ri'
 import { GoArrowDown, GoArrowUp } from 'react-icons/go'
 import { easyDrawState } from './TopBar'
+import { useToolStore } from '../app/store/toolStore'
 
 
 
 const SideBar = () => {
-    const [state, setstate] = useState<easyDrawState>()
-    const [stroke, setstroke] = useState<string>("")
-    const [strokeWidth, setstrokeWidth] = useState<number>(1)
-    const [strokeStyle, setstrokeStyle] = useState<string>("solid")
-    const [bgColour, setbgColour] = useState<string >("")
-    const [opacity, setopacity] = useState<number | string>(100)
 
-    useEffect(()=>{
-        let easyDrawState = JSON.parse(localStorage.getItem("easyDrawState") || "{}")
-        if (easyDrawState) {
-         setstate(easyDrawState)
-        easyDrawState.bgColour?setbgColour(easyDrawState.bgColour):null
-        easyDrawState.strokeColour?setstroke(easyDrawState.strokeColour):null
-        easyDrawState.strokeWidth?setstrokeWidth(easyDrawState.strokeWidth):null
-        easyDrawState.strokeStyle?setstrokeStyle(easyDrawState.strokeStyle):null
-        easyDrawState.opacity?setopacity(easyDrawState.opacity*100):null
-       }
-    },[])
 
+    const {strokeColour, strokeStyle, strokeWidth, bgColour, opacity, setBgColour, setOpacity, setStrokeColour, setStrokeStyle, setStrokeWidth, hasHydrated} = useToolStore()
+
+
+    if (!hasHydrated) return null ;
     const ColourHandler =(colour:string, box:string)=>{
-        let easyDrawState = JSON.parse(localStorage.getItem("easyDrawState") || "{}")
-        if (easyDrawState) {
-            setstate(easyDrawState)
-        }
-         let obj
-        if (box === "stroke" && state) {
-            setstroke(colour)  
-            obj = {...easyDrawState, strokeColour:colour}  
-            setstate(obj)
+        
+        if (box === "stroke" ) {
+            setStrokeColour(colour)  
             
         } 
-        if (box === "bgColour" && colour && state) {
-            console.log(box)
-            setbgColour(colour)
-            obj = {...easyDrawState, bgColour:colour}  
-            setstate(obj)
+        if (box === "bgColour" && colour) { 
+            setBgColour(colour)
         }
-            console.log(obj)
+            
 
-        localStorage.setItem("easyDrawState", JSON.stringify(obj))
 
     }
 
     const StrokeHandler =(stroke:number | string)=>{
-           let easyDrawState = JSON.parse(localStorage.getItem("easyDrawState") || "{}")
-        if (easyDrawState) {
-            setstate(easyDrawState)
-        }
-         let obj
+          
         if (typeof stroke === 'number') {
-            setstrokeWidth(stroke)
-            obj = {...easyDrawState, strokeWidth:stroke }  
-            setstate(obj)
+            setStrokeWidth(stroke)
         } 
         if (typeof stroke === 'string') {
-            setstrokeStyle(stroke)
-            obj = {...easyDrawState, strokeStyle:stroke }  
-            setstate(obj)
+            setStrokeStyle(stroke)
         }
 
-        localStorage.setItem("easyDrawState", JSON.stringify(obj))
     }
 
     const OpacityHandler =(value:string | number)=>{
-       setopacity(value)
-       let easyDrawState = JSON.parse(localStorage.getItem("easyDrawState") || "{}")
-       let obj = {...easyDrawState, opacity:Number(value)/100}
-       localStorage.setItem("easyDrawState", JSON.stringify(obj))
+       setOpacity(Number(value))
     }
 
   return (
@@ -88,13 +54,13 @@ const SideBar = () => {
         <div className="stroke-box ">
             <h3 className='text-xs font-semibold text-gray-300 '>Stroke</h3>
             <div className="storke-colours flex justify-start items-center py-2 gap-1.5">
-                <ColourBox active={stroke === "rgba(255, 255, 255, 1)"}    setColour={(colour)=>ColourHandler(colour,"stroke")}   colour='rgba(255, 255, 255, 1)' padding='p-3'/>
-                <ColourBox active={stroke === "rgba(220, 29, 115, 1)"} setColour={(colour)=>ColourHandler(colour,"stroke")} colour='rgba(220, 29, 115, 1)' padding='p-3'/>
-                <ColourBox active={stroke === "rgba(39, 220, 29, 1)"} setColour={(colour)=>ColourHandler(colour,"stroke")} colour='rgba(39, 220, 29, 1)' padding='p-3'/>
-                <ColourBox active={stroke === "rgba(29, 169, 220, 1)"} setColour={(colour)=>ColourHandler(colour,"stroke")} colour='rgba(29, 169, 220, 1)' padding='p-3'/>
-                <ColourBox active={stroke === "rgba(230, 141, 45, 1)"} setColour={(colour)=>ColourHandler(colour,"stroke")} colour='rgba(230, 141, 45, 1)' padding='p-3'/>
+                <ColourBox active={strokeColour === "rgba(255, 255, 255, 1)"}    setColour={(colour)=>ColourHandler(colour,"stroke")}   colour='rgba(255, 255, 255, 1)' padding='p-3'/>
+                <ColourBox active={strokeColour === "rgba(220, 29, 115, 1)"} setColour={(colour)=>ColourHandler(colour,"stroke")} colour='rgba(220, 29, 115, 1)' padding='p-3'/>
+                <ColourBox active={strokeColour === "rgba(39, 220, 29, 1)"} setColour={(colour)=>ColourHandler(colour,"stroke")} colour='rgba(39, 220, 29, 1)' padding='p-3'/>
+                <ColourBox active={strokeColour === "rgba(29, 169, 220, 1)"} setColour={(colour)=>ColourHandler(colour,"stroke")} colour='rgba(29, 169, 220, 1)' padding='p-3'/>
+                <ColourBox active={strokeColour === "rgba(230, 141, 45, 1)"} setColour={(colour)=>ColourHandler(colour,"stroke")} colour='rgba(230, 141, 45, 1)' padding='p-3'/>
                 <h1 className='text-gray-600'>|</h1>
-                <div style={{backgroundColor:`${stroke || "rgba(255, 255, 255, 1)"}`}} className={`colour-box p-4 rounded-md`}></div>
+                <div style={{backgroundColor:`${strokeColour || "rgba(255, 255, 255, 1)"}`}} className={`colour-box p-4 rounded-md`}></div>
                 {/* <ColourBox colour={stroke || "#fff"} padding='p-4'/> */}
 
             </div>
@@ -111,7 +77,7 @@ const SideBar = () => {
                 <ColourBox active={bgColour === "rgba(4, 103, 139, 1)"} setColour={(colour)=>ColourHandler(colour,"bgColour")} colour='rgba(4, 103, 139, 1)' padding='p-3'/>
                 <ColourBox active={bgColour === "rgba(120, 64, 3, 1)"} setColour={(colour)=>ColourHandler(colour,"bgColour")} colour='rgba(120, 64, 3, 1)' padding='p-3'/>
                 <h1 className='text-gray-600'>|</h1>
-                <div style={{backgroundColor:`${bgColour || "#403f3e"}`}} className={`colour-box p-4 rounded-md`}></div>
+                <div style={{backgroundColor:`${bgColour === "transparent"?"#403f3e":bgColour}`}} className={`colour-box p-4 rounded-md`}></div>
 
             </div>       
         </div>

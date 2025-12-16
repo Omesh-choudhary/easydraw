@@ -1,4 +1,9 @@
+import { useToolStore } from "../app/store/toolStore"
 import { easyDrawState } from "../componentss/TopBar"
+import { cursorStyle } from "./cursorStyle"
+import { isPointOnShape } from "./PointOnShape"
+import { resizeCanvas } from "./resizeCanvas"
+import { screenToWorld } from "./ScreenToWorld"
 
 export type Shape = {
     type:"rectangle" | "diamond" | "circle" | "arrow" | "line"
@@ -19,14 +24,33 @@ export type Shape = {
 
 let existingShapes:Shape[] = []
 
+let viewOffsetX = 0;
+let viewOffsetY = 0;
+let viewScale = 1;
+
+
+
 export const initDraw =(canvas:HTMLCanvasElement)=>{
 
-  let shape:easyDrawState["activeTool"] | null ;
-  let strokeColour:easyDrawState["strokeColour"] | null ;
-  let bgColour:easyDrawState["bgColour"] | null ;
-  let strokeStyle:easyDrawState["strokeStyle"] | null ;
-  let strokeWidth:easyDrawState["strokeWidth"] | null ;
-  let opacity:easyDrawState["opacity"] | 1 ;
+   resizeCanvas(canvas);
+
+  let toolState = useToolStore.getState();
+  
+  let hoveredShape: Shape | null = null;
+  canvas.style.cursor = cursorStyle(toolState.activeTool.type)
+
+      useToolStore.subscribe((state) => {
+      toolState = state;
+      });
+
+      const unsubscribeActiveTool = useToolStore.subscribe(
+        (state) => state.activeTool,
+        (activeTool) => {
+          canvas.style.cursor = cursorStyle(activeTool.type)
+        }
+      );
+
+
 
       const ctx = canvas.getContext("2d")
 
@@ -34,112 +58,110 @@ export const initDraw =(canvas:HTMLCanvasElement)=>{
         return
       }
 
+       window.addEventListener("resize", () => {
+          resizeCanvas(canvas);
+          drawContent(canvas, viewOffsetX, viewOffsetY, viewScale);
+        });
+
        let startX = 0;
        let startY = 0;
 
        let isClicked = false
       canvas.addEventListener("mousedown", (e)=>{
-          const raw = localStorage.getItem("easyDrawState");
-
-            if (raw) {
-              try {
-                const state = JSON.parse(raw) as easyDrawState;
-                shape = state.activeTool; 
-                strokeColour = state.strokeColour;
-                bgColour = state.bgColour
-                strokeStyle = state.strokeStyle
-                strokeWidth = state.strokeWidth
-                opacity = state.opacity
-
-                strokeWidth?ctx.lineWidth=strokeWidth:null
-                strokeColour?ctx.strokeStyle=strokeColour:null
+          
+            toolState.strokeWidth?ctx.lineWidth=toolState.strokeWidth:null
+                toolState.strokeColour?ctx.strokeStyle=toolState.strokeColour:null
+                
 
 
-                ctx.globalAlpha = opacity != null ? opacity : 1
-                if (state.bgColour && state.bgColour !=="transparent") {   
-                  ctx.fillStyle=bgColour
+                if (toolState.bgColour && toolState.bgColour !=="transparent") {   
+                  ctx.fillStyle=toolState.bgColour
                 }else{
                   ctx.fillStyle = "rgba(0, 0, 0, 0)"
                 }
 
-                if (strokeStyle === "dashed") {
+                if (toolState.strokeStyle === "dashed") {
                   ctx.setLineDash([10,5])
                 }
-                if (strokeStyle === "dotted") {
+                if (toolState.strokeStyle === "dotted") {
                   ctx.setLineDash([2,3])
                 }
-                if(strokeStyle === "solid"){
+                if(toolState.strokeStyle === "solid"){
                   ctx.setLineDash([0,0])
                 }
-
-                
-              } catch (err) {
-                console.error("Invalid easyDrawState in localStorage:", err);
-                shape = null;
-              }
-            } else {
-              shape = null;
-            }
-           isClicked = true
-           startX = e.clientX;
-           startY = e.clientY;
-      })
+                isClicked = true
+                const { x, y } = screenToWorld(canvas, e, viewOffsetX, viewOffsetY, viewScale);
+                startX = x;
+                startY = y;
+             })
 
       canvas.addEventListener("mouseup", (e)=>{
             isClicked = false
-            let height = e.clientY-startY;
-            let width = e.clientX-startX
+            if(toolState.activeTool.type === "cursor") return null
+
+            const { x: endX, y: endY } = screenToWorld(canvas, e, viewOffsetX, viewOffsetY, viewScale);
+            let height =endY-startY;
+            let width = endX-startX
             
             let dimensions:Shape
-            if (shape==="rectangle") {
-                dimensions ={type:"rectangle",x:startX, y:startY, height, width, strokeColour, bgColour, strokeStyle, strokeWidth, opacity }
+            if (toolState.activeTool.type==="rectangle") {
+                dimensions ={type:"rectangle",x:startX, y:startY, height, width, strokeColour:toolState.strokeColour, bgColour:toolState.bgColour, strokeStyle:toolState.strokeStyle, strokeWidth:toolState.strokeWidth, opacity:toolState.opacity }
             }
-            else if (shape==="circle"){
+            else if (toolState.activeTool.type==="circle"){
             const centerX = startX + width/2
             const centerY = startY + height/2
             const radius = Math.max(height, width)/2
-                 dimensions ={type:"circle",x:centerX, y:centerY, radius, strokeColour, bgColour,strokeStyle, strokeWidth, opacity}
+                 dimensions ={type:"circle",x:centerX, y:centerY, radius, strokeColour:toolState.strokeColour, bgColour:toolState.bgColour,strokeStyle:toolState.strokeStyle, strokeWidth:toolState.strokeWidth, opacity:toolState.opacity}
             }
-           else if (shape==="diamond") {
+           else if (toolState.activeTool.type==="diamond") {
             const centerX = startX + width/2
             const centerY = startY + height/2
-            dimensions ={type:"diamond",x:centerX, y:centerY, height, width, strokeColour, bgColour, strokeStyle, strokeWidth, opacity}
+            dimensions ={type:"diamond",x:centerX, y:centerY, height:height/2, width:width/2, strokeColour:toolState.strokeColour, bgColour:toolState.bgColour, strokeStyle:toolState.strokeStyle, strokeWidth:toolState.strokeWidth, opacity:toolState.opacity}
             }
-           else if (shape==="arrow") {
-                 const angle = Math.atan2(e.clientY - startY, e.clientX - startX);
-                dimensions ={type:"arrow",x:startX, y:startY, toX:e.clientX, toY:e.clientY, angle, strokeColour, strokeWidth, strokeStyle, opacity}
+           else if (toolState.activeTool.type==="arrow") {
+                 const angle = Math.atan2(endY - startY, endX - startX);
+                dimensions ={type:"arrow",x:startX, y:startY, toX:endX, toY:endY, angle, strokeColour:toolState.strokeColour, strokeWidth:toolState.strokeWidth, strokeStyle:toolState.strokeStyle, opacity:toolState.opacity}
             }
-            else if (shape==="line") {
-                dimensions ={type:"line",x:startX, y:startY, toX:e.clientX, toY:e.clientY, angle:0, strokeColour, strokeWidth, strokeStyle, opacity}
+            else if (toolState.activeTool.type==="line") {
+                dimensions ={type:"line",x:startX, y:startY, toX:endX, toY:endY, angle:0, strokeColour:toolState.strokeColour, strokeWidth:toolState.strokeWidth, strokeStyle:toolState.strokeStyle, opacity:toolState.opacity}
             }
             else {
-            throw new Error("Unknown shape type: " + shape);
+            throw new Error("Unknown shape  ");
             }
 
             existingShapes.push(dimensions)
+            if (!toolState.activeTool.locked) {
+              toolState.setActiveTool("cursor")
+            }
         })
         
         canvas.addEventListener("mousemove", (e)=>{
             
-            if (isClicked) {
+          if (isClicked) {
+            ctx.globalAlpha = toolState.opacity/100
+            const { x: worldX, y: worldY } = screenToWorld(canvas, e, viewOffsetX, viewOffsetY, viewScale);
                 
-                let height = e.clientY-startY;
-                let width = e.clientX-startX
+                let height = worldY-startY;
+                let width = worldX-startX
                 const centerX = startX + width/2
                 const centerY = startY + height/2
                
                 
-                if (shape !== "pencil") {
-                    drawContent(canvas);
+                if (toolState.activeTool.type !== "pencil") {
+                    drawContent(canvas, viewOffsetX, viewOffsetY, viewScale);
+
+                    ctx.save();
+                    ctx.translate(viewOffsetX, viewOffsetY);
+                    ctx.scale(viewScale, viewScale);
                   }
 
-                if (shape==="rectangle") {
+                if (toolState.activeTool.type==="rectangle") {
                     
                     ctx.strokeRect(startX, startY, width, height)
                     ctx.fillRect(startX, startY, width, height)
                 }
 
-                if (shape==="circle") {
+                if (toolState.activeTool.type==="circle") {
                     
                     const radius = Math.max(height, width)/2
                    
@@ -152,75 +174,141 @@ export const initDraw =(canvas:HTMLCanvasElement)=>{
                     }
                 }
 
-                if (shape === "diamond") {
+                if (toolState.activeTool.type === "diamond") {
+                  
+                  const hw = width / 2;  
+                  const hh = height / 2;
 
                    ctx.beginPath();
 
-                    ctx.moveTo(centerX, centerY - height);
+                    ctx.moveTo(centerX, centerY - hh);
+                    ctx.lineTo(centerX + hw, centerY);
+                    ctx.lineTo(centerX, centerY + hh);
+                    ctx.lineTo(centerX - hw, centerY);
 
-                    ctx.lineTo(centerX + width, centerY); 
-                    ctx.lineTo(centerX, centerY + height); 
-                    ctx.lineTo(centerX - width, centerY); 
                     ctx.closePath();
                     ctx.stroke();
                     ctx.fill()
                   
                 }
 
-                if (shape === "arrow") {
-                     console.log(ctx.strokeStyle)
-                  const angle = Math.atan2(e.clientY - startY, e.clientX - startX);
+                if (toolState.activeTool.type === "arrow") {
+                   
+                  const angle = Math.atan2(worldY - startY, worldX - startX);
                   
                   ctx.save(); // Save the current canvas state
 
                   // Draw the main line
                   ctx.beginPath();
                   ctx.moveTo(startX, startY);
-                  ctx.lineTo(e.clientX, e.clientY);
+                  ctx.lineTo(worldX, worldY);
                   ctx.stroke();
 
                   // Draw the arrowhead
                   ctx.beginPath();
-                  ctx.moveTo(e.clientX, e.clientY);
-                  ctx.lineTo(e.clientX - 15 * Math.cos(angle - Math.PI / 6), e.clientY - 15 * Math.sin(angle - Math.PI / 6));
-                  ctx.moveTo(e.clientX, e.clientY);
-                  ctx.lineTo(e.clientX - 15 * Math.cos(angle + Math.PI / 6), e.clientY - 15 * Math.sin(angle + Math.PI / 6));
+                  ctx.moveTo(worldX, worldY);
+                  ctx.lineTo(worldX - 15 * Math.cos(angle - Math.PI / 6), worldY - 15 * Math.sin(angle - Math.PI / 6));
+                  ctx.moveTo(worldX, worldY);
+                  ctx.lineTo(worldX - 15 * Math.cos(angle + Math.PI / 6), worldY - 15 * Math.sin(angle + Math.PI / 6));
                   ctx.stroke();
 
                   ctx.restore();
                 }
 
-                if (shape === "line") {  
+                if (toolState.activeTool.type === "line") {  
                   ctx.beginPath();
                   ctx.moveTo(startX, startY);
-                  ctx.lineTo(e.clientX, e.clientY);
+                  ctx.lineTo(worldX, worldY);
                   ctx.stroke();
                 }
 
-                 if (shape === "pencil") {  
+                 if (toolState.activeTool.type === "pencil") {  
 
+                  const { x, y } = screenToWorld(canvas, e, viewOffsetX, viewOffsetY, viewScale)
                   ctx.lineJoin = 'round'; 
                   ctx.lineCap = 'round';
 
                   ctx.beginPath();
                   ctx.moveTo(startX, startY);
-                  ctx.lineTo(e.offsetX, e.offsetY);
+                  ctx.lineTo(x, y)
                   ctx.stroke();
-                  startX = e.offsetX
-                  startY = e.offsetY
+                  startX = x
+                  startY = y
+
+
+                  
+                 
                 }
 
+                ctx.restore();
+        } if (!isClicked && toolState.activeTool.type === "cursor") {
+
+          const { x: worldX, y: worldY } = screenToWorld(canvas, e, viewOffsetX, viewOffsetY, viewScale);
+          
+                    hoveredShape = null;
+                    // Check topmost shape first (last drawn)
+                    for (let i = existingShapes.length - 1; i >= 0; i--) {
+                       const shape = existingShapes[i];
+                       if (!shape) continue;
+              if (isPointOnShape(worldX, worldY, shape)) {
+                      hoveredShape = shape;
                 
+                       break;
+              }
+            }
+
+            canvas.style.cursor = hoveredShape ? "all-scroll" : "default";
         }
       })
 
+
+     
+                        canvas.addEventListener(
+                        "wheel",
+                        (e: WheelEvent) => {
+                          e.preventDefault();
+
+                          const rect = canvas.getBoundingClientRect();
+                          const mouseX = e.clientX - rect.left;
+                          const mouseY = e.clientY - rect.top;
+
+                          // 🔍 ZOOM (Ctrl / Cmd + wheel)
+                          if (e.ctrlKey || e.metaKey) {
+                            const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
+                            applyPinchZoom(canvas, zoomFactor, mouseX, mouseY);
+                            return;
+                          }
+
+                          // 🧭 PAN (default wheel)
+                          const panSpeed = 1;
+
+                          // Trackpad horizontal scroll
+                          viewOffsetX -= e.deltaX * panSpeed;
+                          viewOffsetY -= e.deltaY * panSpeed;
+                          
+
+                          drawContent(canvas, viewOffsetX, viewOffsetY, viewScale);
+                        },
+                        { passive: false }
+                      );
+
+
+
+
+
+              
+
+
+
     }
+
+
 
 export const drawContent = (
   canvas: HTMLCanvasElement,
-  offsetX: number = 0,
-  offsetY: number = 0,
-  scale: number = 1
+  viewOffsetX: number = 0,
+  viewOffsetY: number = 0,
+  viewScale: number = 1
 ) => {
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
@@ -228,8 +316,8 @@ export const drawContent = (
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   ctx.save();
-  ctx.translate(offsetX, offsetY);
-  ctx.scale(scale, scale);
+  ctx.translate(viewOffsetX, viewOffsetY);
+  ctx.scale(viewScale, viewScale);
 
   ctx.strokeStyle = "white";
 
@@ -237,8 +325,10 @@ export const drawContent = (
 
   for (const shape of existingShapes) {
 
+    ctx.save()
+
     shape.strokeWidth?ctx.lineWidth=shape.strokeWidth:null
-    ctx.globalAlpha =shape.opacity
+    ctx.globalAlpha =shape.opacity/100
      if (shape.strokeStyle === "dashed") {
                   ctx.setLineDash([10,5])
                 }
@@ -256,6 +346,7 @@ export const drawContent = (
 
     if (shape.type === "rectangle") {
       ctx.strokeStyle = shape.strokeColour || "white"
+      ctx.strokeRect(shape.x, shape.y, shape.width!, shape.height!);
       ctx.fillRect(shape.x, shape.y, shape.width!, shape.height!);
     }
 
@@ -313,7 +404,37 @@ export const drawContent = (
                   ctx.lineTo(shape.toX!, shape.toY!);
                   ctx.stroke();
     }
+
+    ctx.restore()
   }
 
-  ctx.restore();
+  ctx.restore()
+
+  
 };
+
+
+
+
+
+
+function applyPinchZoom(
+  canvas: HTMLCanvasElement,
+  zoomDelta: number,
+  screenX: number,
+  screenY: number
+) {
+  // Convert screen → world
+  const worldX = (screenX - viewOffsetX) / viewScale;
+  const worldY = (screenY - viewOffsetY) / viewScale;
+
+  // Apply zoom
+  viewScale *= zoomDelta;
+  viewScale = Math.max(0.1, Math.min(5, viewScale));
+
+  // Keep pinch center fixed
+  viewOffsetX = screenX - worldX * viewScale;
+  viewOffsetY = screenY - worldY * viewScale;
+
+  drawContent(canvas, viewOffsetX, viewOffsetY, viewScale);
+}

@@ -2,7 +2,21 @@
 
 @import "tailwindcss";
 
+/* STOP PAGE PINCH ZOOM */
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overscroll-behavior: none;
+  touch-action: pan-x pan-y;
+}
 
-/* .no-scrollbar::-webkit-scrollbar {
-    display: none;
-} */
+/* ALLOW ONLY CANVAS GESTURES */
+canvas {
+  touch-action: none;
+  overscroll-behavior: none;
+}
+
+
+

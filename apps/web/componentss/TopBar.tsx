@@ -6,11 +6,15 @@ import { BsDiamond } from 'react-icons/bs'
 import { MdArrowForward } from 'react-icons/md'
 import { LuEraser, LuPencil, LuShapes } from 'react-icons/lu'
 import { ImTextColor } from 'react-icons/im'
-import { CiImageOn } from 'react-icons/ci'
+import { CiImageOn, CiLock } from 'react-icons/ci'
 import { TfiLayoutLineSolid } from 'react-icons/tfi'
+import { useToolStore } from '../app/store/toolStore'
 
 export interface easyDrawState {
-    activeTool: string,
+    activeTool: {
+      locked:boolean,
+      type:string
+    },
     strokeColour: string,
     bgColour:string,
     strokeWidth:number,
@@ -18,51 +22,43 @@ export interface easyDrawState {
     opacity:number
 }
  const TopBar = () => {
-const [state, setstate] = useState<easyDrawState>()
-const [activeTool, setActiveTool] = useState<string | null>(null)
 
-   let raw:easyDrawState;
-   useEffect(() => {
-     raw = JSON.parse(localStorage.getItem("easyDrawState") || "{}")
-     console.log(raw)
-    if (raw){
-      setActiveTool(raw.activeTool)
-      setstate(raw)
-    }
-      
-  }, [])
-//  const [activeTool, setActiveTool] = useRecoilState(tool);
+
+const activeTool = useToolStore((state)=>state.activeTool)
+const setActiveTool = useToolStore((state)=>state.setActiveTool)
+const setLocked = useToolStore((state)=>state.setLocked)
+const hasHydrated = useToolStore((state)=>state.hasHydrated)
+
+if (!hasHydrated) return null
+
  
-  const EventHandler =(e:React.MouseEvent)=>{
-     console.log(state)
-    const target = e.target as HTMLElement;
-
-
-    const tool = target.closest("[data-tool]")?.getAttribute("data-tool");
+  const EventHandler =(value:string)=>{
      
-    if (tool) {
-      setActiveTool(tool)
-      let obj = {...state, activeTool:tool}
-      console.log(obj)
-      localStorage.setItem("easyDrawState", JSON.stringify(obj))
+    if (value) {
+      setActiveTool(value)
     }
-
 
   }
 
+  const LockHandler =()=>{
+    setLocked(!activeTool.locked)
+  }
+
    return (
-     <div onClick={(e)=>EventHandler(e)} className='topbar w-fit h-full flex justify-center items-center gap-2 rounded-xl p-1 px-2 bg-[#1b1a1a] '>
-       <Icon active={activeTool==="cursor"} icon={FaArrowPointer} title='cursor' />
-       <Icon active={activeTool==="rectangle"} icon={FaRegSquare} title='rectangle' />
-       <Icon active={activeTool==="diamond"} icon={BsDiamond} title='diamond' />
-       <Icon active={activeTool==="circle"} icon={FaRegCircle} title='circle' />
-       <Icon active={activeTool==="arrow"} icon={FaArrowRightLong} title='arrow' />
-       <Icon active={activeTool==="line"} icon={TfiLayoutLineSolid} title='line' />
-       <Icon active={activeTool==="pencil"} icon={LuPencil} title='pencil' />
-       <Icon active={activeTool==="text"} icon={ImTextColor} title='text' />
-       <Icon active={activeTool==="image"} icon={CiImageOn} title='image' />
-       <Icon active={activeTool==="eraser"} icon={LuEraser} title='eraser' />
-       <Icon active={activeTool==="shapes"} icon={LuShapes} title='shapes' />
+     <div className='topbar w-fit h-full flex justify-center items-center gap-2 rounded-xl p-1 px-2 bg-[#1b1a1a] '>
+       <Icon active={activeTool.locked=== true} icon={CiLock} fn={()=>LockHandler()} title='cursor' />
+        <div className='text-gray-700'>|</div>
+       <Icon active={activeTool.type==="cursor"} icon={FaArrowPointer} fn={()=>EventHandler("cursor")} title='cursor' />
+       <Icon active={activeTool.type==="rectangle"} icon={FaRegSquare} fn={()=>EventHandler("rectangle")} title='rectangle' />
+       <Icon active={activeTool.type==="diamond"} icon={BsDiamond} fn={()=>EventHandler("diamond")} title='diamond' />
+       <Icon active={activeTool.type==="circle"} icon={FaRegCircle} fn={()=>EventHandler("circle")} title='circle' />
+       <Icon active={activeTool.type==="arrow"} icon={FaArrowRightLong} fn={()=>EventHandler("arrow")} title='arrow' />
+       <Icon active={activeTool.type==="line"} icon={TfiLayoutLineSolid} fn={()=>EventHandler("line")} title='line' />
+       <Icon active={activeTool.type==="pencil"} icon={LuPencil} fn={()=>EventHandler("pencil")} title='pencil' />
+       <Icon active={activeTool.type==="text"} icon={ImTextColor} fn={()=>EventHandler("text")} title='text' />
+       <Icon active={activeTool.type==="image"} icon={CiImageOn} fn={()=>EventHandler("image")} title='image' />
+       <Icon active={activeTool.type==="eraser"} icon={LuEraser} fn={()=>EventHandler("eraser")} title='eraser' />
+       <Icon active={activeTool.type==="shapes"} icon={LuShapes} title='shapes' />
      </div>
    )
  }
