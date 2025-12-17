@@ -14,8 +14,8 @@ import { useToolStore } from '../app/store/toolStore'
 
 const SideBar = () => {
 
-
-    const {strokeColour, strokeStyle, strokeWidth, bgColour, opacity, setBgColour, setOpacity, setStrokeColour, setStrokeStyle, setStrokeWidth, hasHydrated} = useToolStore()
+    
+    const {activeTool, strokeColour, strokeStyle, strokeWidth, bgColour, opacity, setBgColour, setOpacity, setStrokeColour, setStrokeStyle, setStrokeWidth, hasHydrated} = useToolStore()
 
 
     if (!hasHydrated) return null ;
@@ -49,7 +49,7 @@ const SideBar = () => {
     }
 
   return (
-    <div className='w-52  bg-[#222222] no-scrollbar h-[72vh] overflow-y-scroll absolute left-5 top-20 rounded-md p-2'>
+    <div hidden={activeTool.type === "cursor"} className='w-52  bg-[#222222] no-scrollbar h-[72vh] overflow-y-scroll absolute left-5 top-20 rounded-md p-2'>
 
         <div className="stroke-box ">
             <h3 className='text-xs font-semibold text-gray-300 '>Stroke</h3>
