@@ -4,11 +4,12 @@ import Icon from './Icon'
 import { FaArrowPointer, FaArrowRightLong, FaRegCircle, FaRegSquare } from 'react-icons/fa6'
 import { BsDiamond } from 'react-icons/bs'
 import { MdArrowForward } from 'react-icons/md'
-import { LuEraser, LuPencil, LuShapes } from 'react-icons/lu'
+import { LuDiamond, LuEraser, LuPencil, LuShapes } from 'react-icons/lu'
 import { ImTextColor } from 'react-icons/im'
 import { CiImageOn, CiLock } from 'react-icons/ci'
 import { TfiLayoutLineSolid } from 'react-icons/tfi'
 import { useToolStore } from '../app/store/toolStore'
+import { PiDiamond, PiDiamondBold, PiDiamondLight } from 'react-icons/pi'
 
 export interface easyDrawState {
     activeTool: {
@@ -45,12 +46,12 @@ if (!hasHydrated) return null
   }
 
    return (
-     <div className='topbar w-fit h-full flex justify-center items-center gap-2 rounded-xl p-1 px-2 bg-[#1b1a1a] '>
+     <div className='topbar w-fit h-full flex justify-center items-center gap-1 rounded-xl p-1 bg-[#1b1a1a] '>
        <Icon active={activeTool.locked=== true} icon={CiLock} fn={()=>LockHandler()} title='cursor' />
         <div className='text-gray-700'>|</div>
        <Icon active={activeTool.type==="cursor"} icon={FaArrowPointer} fn={()=>EventHandler("cursor")} title='cursor' />
        <Icon active={activeTool.type==="rectangle"} icon={FaRegSquare} fn={()=>EventHandler("rectangle")} title='rectangle' />
-       <Icon active={activeTool.type==="diamond"} icon={BsDiamond} fn={()=>EventHandler("diamond")} title='diamond' />
+       <Icon active={activeTool.type==="diamond"} icon={PiDiamondBold} fn={()=>EventHandler("diamond")} title='diamond' />
        <Icon active={activeTool.type==="circle"} icon={FaRegCircle} fn={()=>EventHandler("circle")} title='circle' />
        <Icon active={activeTool.type==="arrow"} icon={FaArrowRightLong} fn={()=>EventHandler("arrow")} title='arrow' />
        <Icon active={activeTool.type==="line"} icon={TfiLayoutLineSolid} fn={()=>EventHandler("line")} title='line' />

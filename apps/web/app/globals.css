@@ -2,6 +2,15 @@
 
 @import "tailwindcss";
 
+@font-face {
+  font-family: ComicShans;
+  src: url(../public/fonts/ComicShanns-Regular-279a7b317d12eb88de06167bd672b4b4.woff2);
+}
+
+@font-face {
+  font-family: ExcaliFont;
+  src: url(../public/fonts/Excalifont-Regular-a88b72a24fb54c9f94e3b5fdaa7481c9.woff2);
+}
 /* STOP PAGE PINCH ZOOM */
 html,
 body {
@@ -10,6 +19,7 @@ body {
   margin: 0;
   overscroll-behavior: none;
   touch-action: pan-x pan-y;
+  background-color: black;
 }
 
 /* ALLOW ONLY CANVAS GESTURES */
@@ -18,5 +28,9 @@ canvas {
   overscroll-behavior: none;
 }
 
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
 
 

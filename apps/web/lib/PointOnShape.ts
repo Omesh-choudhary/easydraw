@@ -1,4 +1,5 @@
-import { Shape } from "./draw";
+import { Shape } from "../app/store/shapeStore";
+
 
 export function isPointOnShape(
   x: number,

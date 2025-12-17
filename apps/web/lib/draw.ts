@@ -1,46 +1,65 @@
+import { Shape, useShapeStore } from "../app/store/shapeStore"
 import { useToolStore } from "../app/store/toolStore"
 import { easyDrawState } from "../componentss/TopBar"
 import { cursorStyle } from "./cursorStyle"
+import { drawEraserCursor } from "./drawEraserCursor"
 import { isPointOnShape } from "./PointOnShape"
 import { resizeCanvas } from "./resizeCanvas"
 import { screenToWorld } from "./ScreenToWorld"
+import {v4 as uuidv4} from "uuid"
 
-export type Shape = {
-    type:"rectangle" | "diamond" | "circle" | "arrow" | "line"
-    x:number  
-    y:number
-    toX?:number
-    toY?:number
-    angle?:number
-    height?:number
-    width?:number
-    radius?:number
-    opacity:number
-    strokeColour?:string | null
-    strokeWidth?:number | null
-    strokeStyle?:string | null
-    bgColour?:string | null
-} 
+// export type Shape = {
+//     type:"rectangle" | "diamond" | "circle" | "arrow" | "line"
+//     x:number  
+//     y:number
+//     toX?:number
+//     toY?:number
+//     angle?:number
+//     height?:number
+//     width?:number
+//     radius?:number
+//     opacity:number
+//     strokeColour?:string | null
+//     strokeWidth?:number | null
+//     strokeStyle?:string | null
+//     bgColour?:string | null
+// } 
 
-let existingShapes:Shape[] = []
+
 
 let viewOffsetX = 0;
 let viewOffsetY = 0;
 let viewScale = 1;
+let cursorWorldX = 0;
+let cursorWorldY = 0;
+let clearEraseDot = false
+let lastEraseX: number | null = null;
+let lastEraseY: number | null = null;
+
+
+
+let toolState = useToolStore.getState();
+let shapeState = useShapeStore.getState()
 
 
 
 export const initDraw =(canvas:HTMLCanvasElement)=>{
 
    resizeCanvas(canvas);
+   drawContent(canvas, viewOffsetX, viewOffsetY, viewScale)
 
-  let toolState = useToolStore.getState();
   
   let hoveredShape: Shape | null = null;
   canvas.style.cursor = cursorStyle(toolState.activeTool.type)
 
       useToolStore.subscribe((state) => {
       toolState = state;
+      });
+
+      useShapeStore.subscribe((state) => {
+      shapeState = state;
+     
+      drawContent(canvas, viewOffsetX, viewOffsetY, viewScale)
       });
 
       const unsubscribeActiveTool = useToolStore.subscribe(
@@ -71,8 +90,6 @@ export const initDraw =(canvas:HTMLCanvasElement)=>{
           
             toolState.strokeWidth?ctx.lineWidth=toolState.strokeWidth:null
                 toolState.strokeColour?ctx.strokeStyle=toolState.strokeColour:null
-                
-
 
                 if (toolState.bgColour && toolState.bgColour !=="transparent") {   
                   ctx.fillStyle=toolState.bgColour
@@ -97,39 +114,54 @@ export const initDraw =(canvas:HTMLCanvasElement)=>{
 
       canvas.addEventListener("mouseup", (e)=>{
             isClicked = false
-            if(toolState.activeTool.type === "cursor") return null
+
+            if(toolState.activeTool.type === "cursor" || 
+              toolState.activeTool.type ==="eraser"
+            ) {
+              lastEraseX = null;
+              lastEraseY = null;
+
+              return null
+            }
 
             const { x: endX, y: endY } = screenToWorld(canvas, e, viewOffsetX, viewOffsetY, viewScale);
             let height =endY-startY;
             let width = endX-startX
+            const centerX = startX + width/2
+            const centerY = startY + height/2
+            const radius = Math.max(height, width)/2
+            const angle = Math.atan2(endY - startY, endX - startX);
             
-            let dimensions:Shape
+            let dimensions:Shape;  
+            
+            
             if (toolState.activeTool.type==="rectangle") {
-                dimensions ={type:"rectangle",x:startX, y:startY, height, width, strokeColour:toolState.strokeColour, bgColour:toolState.bgColour, strokeStyle:toolState.strokeStyle, strokeWidth:toolState.strokeWidth, opacity:toolState.opacity }
+                dimensions ={id:uuidv4(), type:"rectangle",x:startX, y:startY, height, width, strokeColour:toolState.strokeColour, bgColour:toolState.bgColour, strokeStyle:toolState.strokeStyle, strokeWidth:toolState.strokeWidth, opacity:toolState.opacity }
             }
             else if (toolState.activeTool.type==="circle"){
             const centerX = startX + width/2
             const centerY = startY + height/2
             const radius = Math.max(height, width)/2
-                 dimensions ={type:"circle",x:centerX, y:centerY, radius, strokeColour:toolState.strokeColour, bgColour:toolState.bgColour,strokeStyle:toolState.strokeStyle, strokeWidth:toolState.strokeWidth, opacity:toolState.opacity}
+                 dimensions ={id:uuidv4(), type:"circle",x:centerX, y:centerY, radius, strokeColour:toolState.strokeColour, bgColour:toolState.bgColour,strokeStyle:toolState.strokeStyle, strokeWidth:toolState.strokeWidth, opacity:toolState.opacity}
             }
            else if (toolState.activeTool.type==="diamond") {
             const centerX = startX + width/2
             const centerY = startY + height/2
-            dimensions ={type:"diamond",x:centerX, y:centerY, height:height/2, width:width/2, strokeColour:toolState.strokeColour, bgColour:toolState.bgColour, strokeStyle:toolState.strokeStyle, strokeWidth:toolState.strokeWidth, opacity:toolState.opacity}
+            dimensions ={id:uuidv4(), type:"diamond",x:centerX, y:centerY, height:height/2, width:width/2, strokeColour:toolState.strokeColour, bgColour:toolState.bgColour, strokeStyle:toolState.strokeStyle, strokeWidth:toolState.strokeWidth, opacity:toolState.opacity}
             }
            else if (toolState.activeTool.type==="arrow") {
                  const angle = Math.atan2(endY - startY, endX - startX);
-                dimensions ={type:"arrow",x:startX, y:startY, toX:endX, toY:endY, angle, strokeColour:toolState.strokeColour, strokeWidth:toolState.strokeWidth, strokeStyle:toolState.strokeStyle, opacity:toolState.opacity}
+                dimensions ={id:uuidv4(), type:"arrow",x:startX, y:startY, toX:endX, toY:endY, angle, strokeColour:toolState.strokeColour, strokeWidth:toolState.strokeWidth, strokeStyle:toolState.strokeStyle, opacity:toolState.opacity}
             }
             else if (toolState.activeTool.type==="line") {
-                dimensions ={type:"line",x:startX, y:startY, toX:endX, toY:endY, angle:0, strokeColour:toolState.strokeColour, strokeWidth:toolState.strokeWidth, strokeStyle:toolState.strokeStyle, opacity:toolState.opacity}
+                dimensions ={id:uuidv4(), type:"line",x:startX, y:startY, toX:endX, toY:endY, angle:0, strokeColour:toolState.strokeColour, strokeWidth:toolState.strokeWidth, strokeStyle:toolState.strokeStyle, opacity:toolState.opacity}
             }
             else {
             throw new Error("Unknown shape  ");
             }
 
-            existingShapes.push(dimensions)
+
+            shapeState.addShape(dimensions)
             if (!toolState.activeTool.locked) {
               toolState.setActiveTool("cursor")
             }
@@ -247,8 +279,8 @@ export const initDraw =(canvas:HTMLCanvasElement)=>{
           
                     hoveredShape = null;
                     // Check topmost shape first (last drawn)
-                    for (let i = existingShapes.length - 1; i >= 0; i--) {
-                       const shape = existingShapes[i];
+                    for (let i = shapeState.shapes.length - 1; i >= 0; i--) {
+                       const shape = shapeState.shapes[i];
                        if (!shape) continue;
               if (isPointOnShape(worldX, worldY, shape)) {
                       hoveredShape = shape;
@@ -256,9 +288,52 @@ export const initDraw =(canvas:HTMLCanvasElement)=>{
                        break;
               }
             }
-
+             
+           
             canvas.style.cursor = hoveredShape ? "all-scroll" : "default";
         }
+
+        if (toolState.activeTool.type === "eraser") {
+          
+          const { x, y } = screenToWorld(canvas, e, viewOffsetX, viewOffsetY, viewScale);
+          clearEraseDot = false
+          canvas.style.cursor = "none"
+
+          cursorWorldX = x;
+          cursorWorldY = y;
+
+          if (isClicked) {       
+
+          
+                    hoveredShape = null;
+                    // Check topmost shape first (last drawn)
+                    for (let i = shapeState.shapes.length - 1; i >= 0; i--) {
+                       const shape = shapeState.shapes[i];
+                       if (!shape) continue;
+              if (isPointOnShape(x, y, shape)) {
+                      hoveredShape = shape;
+                
+                       break;
+              }
+            }
+
+
+            if (hoveredShape) {
+              
+              shapeState.eraseShape(hoveredShape)
+            }
+
+            
+          }
+          
+          drawContent(canvas, viewOffsetX, viewOffsetY, viewScale)
+        }
+      })
+
+
+      canvas.addEventListener("mouseleave", ()=>{
+        clearEraseDot = true
+        drawContent(canvas, viewOffsetX, viewOffsetY, viewScale)
       })
 
 
@@ -274,7 +349,7 @@ export const initDraw =(canvas:HTMLCanvasElement)=>{
 
                           // 🔍 ZOOM (Ctrl / Cmd + wheel)
                           if (e.ctrlKey || e.metaKey) {
-                            const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
+                            const zoomFactor = e.deltaY < 0 ? 1.01 : 0.99;
                             applyPinchZoom(canvas, zoomFactor, mouseX, mouseY);
                             return;
                           }
@@ -322,8 +397,13 @@ export const drawContent = (
   ctx.strokeStyle = "white";
 
 
+  if (toolState.activeTool.type ==="eraser" && !clearEraseDot) {
+    drawEraserCursor(ctx, cursorWorldX, cursorWorldY)
+  }
 
-  for (const shape of existingShapes) {
+
+
+  for (const shape of shapeState.shapes) {
 
     ctx.save()
 
@@ -404,6 +484,8 @@ export const drawContent = (
                   ctx.lineTo(shape.toX!, shape.toY!);
                   ctx.stroke();
     }
+
+
 
     ctx.restore()
   }

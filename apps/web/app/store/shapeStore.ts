@@ -1,30 +1,48 @@
 import { create } from "zustand";
-
+import { persist, subscribeWithSelector } from "zustand/middleware";
 export type Shape = {
   id: string;
-  type: "rectangle" | "circle" | "diamond" | "line" | "arrow";
-  x: number;
-  y: number;
-  toX?: number;
-  toY?: number;
-  width?: number;
-  height?: number;
-  radius?: number;
+  type: string
+  x:number  
+  y:number
+  toX?:number
+  toY?:number
+  angle?:number
+  height?:number
+  width?:number
+  radius?:number
+  opacity:number
+  strokeColour?:string | null
+  strokeWidth?:number | null
+  strokeStyle?:string | null
+  bgColour?:string | null
 };
 
 type ShapeState = {
   shapes: Shape[];
-
+  hasHydrated:boolean;
   addShape: (shape: Shape) => void;
+  eraseShape: (shape: Shape) => void;
   updateShape: (id: string, patch: Partial<Shape>) => void;
 };
 
-export const useShapeStore = create<ShapeState>((set) => ({
+export const useShapeStore = create<ShapeState>()(
+  subscribeWithSelector(
+  persist(
+  (set) => ({
   shapes: [],
+  hasHydrated:false,
 
   addShape: (shape) =>
     set((state) => ({
       shapes: [...state.shapes, shape],
+    })),
+
+    eraseShape: (shape) =>
+    set((state) => ({
+      shapes: state.shapes.filter((s) =>
+        s !== shape 
+      ),
     })),
 
   updateShape: (id, patch) =>
@@ -33,4 +51,17 @@ export const useShapeStore = create<ShapeState>((set) => ({
         s.id === id ? { ...s, ...patch } : s
       ),
     })),
-}));
+       }),
+
+       {
+      name: "easydrawShapes",
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          state.hasHydrated = true;
+        }
+      },
+    }
+ 
+
+
+)));

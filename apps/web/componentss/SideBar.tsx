@@ -49,7 +49,7 @@ const SideBar = () => {
     }
 
   return (
-    <div className='w-52  bg-[#222222] h-[72vh] absolute left-5 top-20 rounded-md p-2'>
+    <div className='w-52  bg-[#222222] no-scrollbar h-[72vh] overflow-y-scroll absolute left-5 top-20 rounded-md p-2'>
 
         <div className="stroke-box ">
             <h3 className='text-xs font-semibold text-gray-300 '>Stroke</h3>
@@ -60,7 +60,7 @@ const SideBar = () => {
                 <ColourBox active={strokeColour === "rgba(29, 169, 220, 1)"} setColour={(colour)=>ColourHandler(colour,"stroke")} colour='rgba(29, 169, 220, 1)' padding='p-3'/>
                 <ColourBox active={strokeColour === "rgba(230, 141, 45, 1)"} setColour={(colour)=>ColourHandler(colour,"stroke")} colour='rgba(230, 141, 45, 1)' padding='p-3'/>
                 <h1 className='text-gray-600'>|</h1>
-                <div style={{backgroundColor:`${strokeColour || "rgba(255, 255, 255, 1)"}`}} className={`colour-box p-4 rounded-md`}></div>
+                <div style={{backgroundColor:`${strokeColour || "rgba(255, 255, 255, 1)"}`}} className={`colour-box p-3.5 rounded-md`}></div>
                 {/* <ColourBox colour={stroke || "#fff"} padding='p-4'/> */}
 
             </div>
@@ -77,7 +77,7 @@ const SideBar = () => {
                 <ColourBox active={bgColour === "rgba(4, 103, 139, 1)"} setColour={(colour)=>ColourHandler(colour,"bgColour")} colour='rgba(4, 103, 139, 1)' padding='p-3'/>
                 <ColourBox active={bgColour === "rgba(120, 64, 3, 1)"} setColour={(colour)=>ColourHandler(colour,"bgColour")} colour='rgba(120, 64, 3, 1)' padding='p-3'/>
                 <h1 className='text-gray-600'>|</h1>
-                <div style={{backgroundColor:`${bgColour === "transparent"?"#403f3e":bgColour}`}} className={`colour-box p-4 rounded-md`}></div>
+                <div style={{backgroundColor:`${bgColour === "transparent"?"#403f3e":bgColour}`}} className={`colour-box p-3.5 rounded-md`}></div>
 
             </div>       
         </div>

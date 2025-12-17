@@ -9,7 +9,7 @@ interface colourBoxProps {
 
 const ColourBox = ({colour, padding, active, setColour}:colourBoxProps) => {
   return (
-    <div onClick={()=>setColour(colour)} style={{backgroundColor:`${colour}`}} className={` ${padding} ${active?"border-3 border-[#4c4897]":""} rounded-md w-fit cursor-pointer hover:scale-110`}>
+    <div onClick={()=>setColour(colour)} style={{backgroundColor:`${colour}`}} className={` ${padding} ${active?"border-3 border-[#5752c6]":""} rounded-md w-fit cursor-pointer hover:scale-110`}>
       
     </div>
   )
