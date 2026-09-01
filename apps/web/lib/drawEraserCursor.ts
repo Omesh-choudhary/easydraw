@@ -1,6 +1,6 @@
 export function drawEraserCursor(ctx: CanvasRenderingContext2D, cursorWorldX:number, cursorWorldY:number) {
   const eraserRadius = 8; // world units
-
+  ctx.setLineDash([0,0])
   ctx.save();
   ctx.beginPath();
   ctx.arc(cursorWorldX, cursorWorldY, eraserRadius, 0, Math.PI * 2);

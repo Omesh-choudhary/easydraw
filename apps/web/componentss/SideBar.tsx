@@ -9,24 +9,31 @@ import { RiDownloadLine, RiUploadLine } from 'react-icons/ri'
 import { GoArrowDown, GoArrowUp } from 'react-icons/go'
 import { easyDrawState } from './TopBar'
 import { useToolStore } from '../app/store/toolStore'
+import { useShapeStore } from '../app/store/shapeStore'
 
 
 
 const SideBar = () => {
 
     
-    const {activeTool, strokeColour, strokeStyle, strokeWidth, bgColour, opacity, setBgColour, setOpacity, setStrokeColour, setStrokeStyle, setStrokeWidth, hasHydrated} = useToolStore()
-
+    const {activeTool, strokeColour, strokeStyle, strokeWidth, bgColour, opacity, setBgColour, setOpacity, setStrokeColour, setStrokeStyle, setStrokeWidth, selectedShapeId, hasHydrated} = useToolStore()
+    const shapeState = useShapeStore()
 
     if (!hasHydrated) return null ;
     const ColourHandler =(colour:string, box:string)=>{
         
         if (box === "stroke" ) {
             setStrokeColour(colour)  
+            if (selectedShapeId) {
+                shapeState.updateShape(selectedShapeId, {strokeColour:colour})
+            }
             
         } 
         if (box === "bgColour" && colour) { 
             setBgColour(colour)
+             if (selectedShapeId) {
+                shapeState.updateShape(selectedShapeId, {bgColour:colour})
+            }
         }
             
 
@@ -37,19 +44,28 @@ const SideBar = () => {
           
         if (typeof stroke === 'number') {
             setStrokeWidth(stroke)
+            if (selectedShapeId) {
+                shapeState.updateShape(selectedShapeId, {strokeWidth:stroke})
+            }
         } 
         if (typeof stroke === 'string') {
             setStrokeStyle(stroke)
+            if (selectedShapeId) {
+                shapeState.updateShape(selectedShapeId, {strokeStyle:stroke})
+            }
         }
 
     }
 
     const OpacityHandler =(value:string | number)=>{
        setOpacity(Number(value))
+       if (selectedShapeId) {
+                shapeState.updateShape(selectedShapeId, {opacity:Number(value)})
+            }
     }
 
   return (
-    <div hidden={activeTool.type === "cursor"} className='w-52  bg-[#222222] no-scrollbar h-[72vh] overflow-y-scroll absolute left-5 top-20 rounded-md p-2'>
+    <div hidden={(activeTool.type === "cursor" && selectedShapeId === null)} className='w-52  bg-[#222222] no-scrollbar h-[72vh] overflow-y-scroll absolute left-5 top-20 rounded-md p-2'>
 
         <div className="stroke-box ">
             <h3 className='text-xs font-semibold text-gray-300 '>Stroke</h3>

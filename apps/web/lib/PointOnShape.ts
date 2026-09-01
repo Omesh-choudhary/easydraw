@@ -30,6 +30,30 @@ export function isPointOnShape(
       );
     }
 
+    case "text": {
+      if (!shape.text) return false;
+
+      // MUST match the font used while drawing text
+      const fontSize = shape.height!; // same as ctx.font = "30px ExcaliFont"
+      const padding = tolerance;
+
+      // Measure width using an offscreen canvas
+      const measureCanvas = document.createElement("canvas");
+      const measureCtx = measureCanvas.getContext("2d")!;
+      measureCtx.font = `${fontSize}px ExcaliFont`;
+
+      const textWidth = measureCtx.measureText(shape.text).width;
+      const textHeight = fontSize;
+
+      return (
+        x >= shape.x - padding &&
+        x <= shape.x + textWidth + padding &&
+        y >= shape.y - textHeight - padding &&
+        y <= shape.y + padding
+      );
+    }
+
+
     case "line":
     case "arrow":
       return distancePointToLine(

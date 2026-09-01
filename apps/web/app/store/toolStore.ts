@@ -12,6 +12,7 @@ type ToolState = easyDrawState & {
   setStrokeStyle: (style: easyDrawState["strokeStyle"]) => void;
   setStrokeWidth: (width: number) => void;
   setOpacity: (opacity: number) => void;
+  setselectedShapeId: (id: string | null) => void;
   setLocked: (value:boolean) => void;
 };
 
@@ -28,6 +29,7 @@ export const useToolStore = create<ToolState>()(
       strokeStyle: "solid",
       strokeWidth: 1,
       opacity: 1,
+      selectedShapeId:null,
 
       hasHydrated: false,
 
@@ -40,6 +42,7 @@ export const useToolStore = create<ToolState>()(
       setStrokeStyle: (style) => set({ strokeStyle: style }),
       setStrokeWidth: (width) => set({ strokeWidth: width }),
       setOpacity: (opacity) => set({ opacity }),
+      setselectedShapeId: (id) => set({selectedShapeId:id  }),
       setLocked: (value) => set((state)=>({activeTool:{
         ...state.activeTool,
         locked:value

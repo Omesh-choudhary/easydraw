@@ -20,7 +20,8 @@ export interface easyDrawState {
     bgColour:string,
     strokeWidth:number,
     strokeStyle:string,
-    opacity:number
+    opacity:number,
+    selectedShapeId:string | null
 }
  const TopBar = () => {
 
@@ -29,6 +30,7 @@ const activeTool = useToolStore((state)=>state.activeTool)
 const setActiveTool = useToolStore((state)=>state.setActiveTool)
 const setLocked = useToolStore((state)=>state.setLocked)
 const hasHydrated = useToolStore((state)=>state.hasHydrated)
+const setselectedShapeId = useToolStore((state)=>state.setselectedShapeId)
 
 if (!hasHydrated) return null
 
@@ -37,6 +39,7 @@ if (!hasHydrated) return null
      
     if (value) {
       setActiveTool(value)
+      setselectedShapeId(null)
     }
 
   }

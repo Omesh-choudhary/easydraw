@@ -11,6 +11,7 @@ export type Shape = {
   height?:number
   width?:number
   radius?:number
+  text?:string
   opacity:number
   strokeColour?:string | null
   strokeWidth?:number | null
@@ -24,6 +25,8 @@ type ShapeState = {
   addShape: (shape: Shape) => void;
   eraseShape: (shape: Shape) => void;
   updateShape: (id: string, patch: Partial<Shape>) => void;
+  updateText: (id:string, value:string) => void;
+  changeIndex: (value: string, id:string) => void;
 };
 
 export const useShapeStore = create<ShapeState>()(
@@ -50,6 +53,19 @@ export const useShapeStore = create<ShapeState>()(
       shapes: state.shapes.map((s) =>
         s.id === id ? { ...s, ...patch } : s
       ),
+    })),
+
+    updateText: (id, value) =>
+    set((state) => ({
+      shapes: state.shapes.map((s) =>
+        s.id === id ? { ...s, text: s.text+value } : s
+      ),
+      
+    })),
+
+    changeIndex: (value, id) =>
+    set((state) => ({
+      
     })),
        }),
 
